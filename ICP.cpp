@@ -5,6 +5,14 @@
 #include <iomanip>
 #include <pangolin/image/image_io.h>
 
+#define IMG_H 720
+#define IMG_W 1280
+#define FOCAL_X 608.6896362304688
+#define FOCAL_Y 608.6896362304688
+#define CENTER_X 640.839599609375
+#define CENTER_Y 369.6243591308594
+#define DEPTH_FACTOR 1    // For TUM, this will be 5
+
 std::ifstream asFile;
 std::string directory;
 
@@ -53,9 +61,9 @@ uint64_t loadDepth(pangolin::Image<unsigned short> &depth) {
   uint64_t time;
   std::istringstream(timeString) >> time;
 
-  for (unsigned int i = 0; i < 480; i++) {
-    for (unsigned int j = 0; j < 640; j++) {
-      depth.RowPtr(i)[j] = depthRaw16(j, i) / 5;
+  for (unsigned int i = 0; i < IMG_H; i++) {
+    for (unsigned int j = 0; j < IMG_W; j++) {
+      depth.RowPtr(i)[j] = depthRaw16(j, i) / DEPTH_FACTOR;    // depth factor
     }
   }
 
@@ -108,8 +116,8 @@ int main(int argc, char *argv[]) {
 
   asFile.open(associationFile.c_str());
 
-  pangolin::ManagedImage<unsigned short> firstData(640, 480);
-  pangolin::ManagedImage<unsigned short> secondData(640, 480);
+  pangolin::ManagedImage<unsigned short> firstData(IMG_W, IMG_H);
+  pangolin::ManagedImage<unsigned short> secondData(IMG_W, IMG_H);
 
   pangolin::Image<unsigned short> firstRaw(firstData.w, firstData.h,
                                            firstData.pitch,
@@ -118,7 +126,7 @@ int main(int argc, char *argv[]) {
                                             secondData.pitch,
                                             (unsigned short *)secondData.ptr);
 
-  ICPOdometry icpOdom(640, 480, 319.5, 239.5, 528, 528);
+  ICPOdometry icpOdom(IMG_W, IMG_H , CENTER_X, CENTER_Y, FOCAL_X, FOCAL_Y);
 
   assert(!asFile.eof() && asFile.is_open());
 
@@ -129,7 +137,7 @@ int main(int argc, char *argv[]) {
   Sophus::SE3d T_wc_curr;
 
   std::ofstream file;
-  file.open("output.poses", std::fstream::out);
+  file.open("output.txt", std::fstream::out);
   file.close();
 
   cudaDeviceProp prop;
@@ -242,7 +250,7 @@ int main(int argc, char *argv[]) {
 
     std::swap(firstRaw, secondRaw);
 
-    outputFreiburg("output.poses", timestamp, T_wc_curr.cast<float>().matrix());
+    outputFreiburg("output.txt", timestamp, T_wc_curr.cast<float>().matrix());
 
     timestamp = loadDepth(secondRaw);
   }
