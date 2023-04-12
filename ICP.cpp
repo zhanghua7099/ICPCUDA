@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
   Sophus::SE3d T_wc_curr;
 
   std::ofstream file;
-  file.open("output.txt", std::fstream::out);
+  file.open("icpcuda_traj.txt", std::fstream::out);
   file.close();
 
   cudaDeviceProp prop;
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
 
     std::swap(firstRaw, secondRaw);
 
-    outputFreiburg("output.txt", timestamp, T_wc_curr.cast<float>().matrix());
+    outputFreiburg("icpcuda_traj.txt", timestamp, T_wc_curr.cast<float>().matrix());
 
     timestamp = loadDepth(secondRaw);
   }
